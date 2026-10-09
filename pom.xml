@@ -18,8 +18,20 @@
         <module>sky-server</module>
     </modules>
     <properties>
+        <!--
+          编译用的 Java 版本，三处保持一致：
+            1. 这里的 java.version          → Maven / IDEA Maven 导入时使用
+            2. IDEA: File > Project Structure > Project > SDK / Language level
+            3. IDEA: Settings > Build > Build Tools > Maven > Runner > JRE
+          本机可用 JDK：C:\Users\42548\.jdks\ms-17.0.20.1 (17.0.20.1)
+          Spring Boot 2.7.3 官方支持 17；项目源码是 javax.* 命名空间，不可用 JDK 21+ 的 jakarta 默认行为。
+        -->
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <mybatis.spring>2.2.0</mybatis.spring>
-        <lombok>1.18.20</lombok>
+        <!-- Lombok 1.18.20 最高只支持到 JDK 16，在 JDK 17 上编译会直接报错，必须升到 1.18.30+ -->
+        <lombok>1.18.46</lombok>
         <fastjson>1.2.76</fastjson>
         <commons.lang>2.6</commons.lang>
         <druid>1.2.1</druid>
@@ -29,6 +41,8 @@
         <aspectj>1.9.4</aspectj>
         <jjwt>0.9.1</jjwt>
         <jaxb-api>2.3.1</jaxb-api>
+        <jaxb-runtime>2.3.9</jaxb-runtime>
+        <jakarta.activation>1.2.2</jakarta.activation>
         <poi>3.16</poi>
     </properties>
     <dependencyManagement>
@@ -103,6 +117,17 @@
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${jaxb-api}</version>
+            </dependency>
+            <!-- JDK 11 起 JAXB 被移出 JDK，jjwt 0.9.1 需要它，否则启动就报 ClassNotFoundException -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${jaxb-runtime}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>jakarta.activation</artifactId>
+                <version>${jakarta.activation}</version>
             </dependency>
 
             <!-- poi -->

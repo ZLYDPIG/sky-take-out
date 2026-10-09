@@ -1,13 +1,21 @@
+# ===== 苍穹外卖 服务端主配置 =====
+# 数据库账号密码等本机相关配置放在 application-dev.yml，本文件保持环境无关。
+
 server:
+  # 服务端口，启动后接口地址为 http://localhost:8080
   port: 8080
 
 spring:
   profiles:
+    # 激活开发环境配置，即读取同目录下的 application-dev.yml
     active: dev
   main:
+    # 允许循环依赖：项目中部分 Bean 互相注入，Spring Boot 2.6+ 默认禁止，这里放开
     allow-circular-references: true
   datasource:
     druid:
+      # 以下四项通过占位符引用 application-dev.yml 中 sky.datasource.* 的值，
+      # 换数据库/换机器时只需改 application-dev.yml，不用动本文件
       driver-class-name: ${sky.datasource.driver-class-name}
       url: jdbc:mysql://${sky.datasource.host}:${sky.datasource.port}/${sky.datasource.database}?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&zeroDateTimeBehavior=convertToNull&useSSL=false&allowPublicKeyRetrieval=true
       username: ${sky.datasource.username}
@@ -16,11 +24,13 @@ spring:
 mybatis:
   #mapper配置文件
   mapper-locations: classpath:mapper/*.xml
+  # 实体类别名包，XML 中可直接写类名
   type-aliases-package: com.sky.entity
   configuration:
-    #开启驼峰命名
+    #开启驼峰命名：数据库字段 create_time 自动映射到 Java 属性 createTime
     map-underscore-to-camel-case: true
 
+# 日志级别：mapper 设为 debug 可看到实际执行的 SQL，方便调试
 logging:
   level:
     com:
@@ -33,7 +43,7 @@ sky:
   jwt:
     # 设置jwt签名加密时使用的秘钥
     admin-secret-key: itcast
-    # 设置jwt过期时间
+    # 设置jwt过期时间（毫秒），7200000 = 2 小时
     admin-ttl: 7200000
-    # 设置前端传递过来的令牌名称
+    # 设置前端传递过来的令牌名称（请求头名）
     admin-token-name: token

@@ -1,8 +1,15 @@
+# ===== 开发环境数据库配置 =====
+# 被 application.yml 中的 spring.profiles.active=dev 激活。
+# 本机相关参数都集中在这里，换电脑只需改这个文件。
+
 sky:
   datasource:
+    # MySQL 8 的驱动类（旧版 com.mysql.jdbc.Driver 已废弃）
     driver-class-name: com.mysql.cj.jdbc.Driver
     host: localhost
     port: 3306
     database: sky_take_out
+    # 数据库账号：本机 MySQL 8.0.34 的 root 用户
     username: root
-    password: root
+    # 数据库密码：与 DataGrip 中 @localhost 数据源保持一致
+    password: 627124
