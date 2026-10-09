@@ -103,4 +103,19 @@ public class EmployeeController {
         employeeService.updateStatus(status, id);
         return Result.success();
     }
+
+    @GetMapping("/{id}")
+    public Result<Employee> get(@PathVariable Integer id) {
+
+        log.info("根据员工id查询员工：id={}", id);
+        Employee employee = employeeService.getById(id);
+        return Result.success(employee);
+    }
+
+    @PutMapping
+    public Result update(@RequestBody EmployeeDTO employeeDTO) {
+        log.info("更新员工：{}", employeeDTO);
+        employeeService.update(employeeDTO);
+        return Result.success();
+    }
 }

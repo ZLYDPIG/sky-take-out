@@ -35,4 +35,8 @@ public interface EmployeeService {
      * @param id    要更新状态的员工 id 列表
      */
     void updateStatus(Integer status, Integer id);
+
+    void update(EmployeeDTO employeeDTO);
+
+    Employee getById(Integer id);
 }

@@ -97,7 +97,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         employee.setCreateTime(LocalDateTime.now());
         employee.setUpdateTime(LocalDateTime.now());
 
-        //5、设置创建人和修改人（当前固定为1，TODO 后期应从登录会话中获取当前操作人id）
+        //5、设置创建人和修改人
         employee.setCreateUser(BaseContext.getCurrentId());
         employee.setUpdateUser(BaseContext.getCurrentId());
 
@@ -125,6 +125,23 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .build();
 
         employeeMapper.changeStatus(employee);
+    }
+
+    @Override
+    public void update(EmployeeDTO employeeDTO) {
+        Employee employee =
+                Employee.builder()
+                .updateUser(BaseContext.getCurrentId())
+                .createTime(LocalDateTime.now())
+                .updateTime(LocalDateTime.now())
+                .build();
+        BeanUtils.copyProperties(employeeDTO, employee);
+        employeeMapper.changeStatus(employee);
+    }
+
+    @Override
+    public Employee getById(Integer id) {
+        return employeeMapper.getById(id);
     }
 
 }
