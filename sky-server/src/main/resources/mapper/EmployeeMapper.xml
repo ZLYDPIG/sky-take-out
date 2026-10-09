@@ -7,17 +7,31 @@
   说明：本文件必须保留 <mapper> 根标签，否则 MyBatis 解析时会报
         “SAXParseException: 文件提前结束”，导致 sqlSessionFactory 创建失败、项目启动不了。
   namespace 必须与 com.sky.mapper.EmployeeMapper 接口的全限定名完全一致。
-  目前 EmployeeMapper 里的查询用 @Select 注解写在接口上，所以这里暂时没有 <select> 语句。
 -->
 <mapper namespace="com.sky.mapper.EmployeeMapper">
+    <update id="changeStatus" parameterType="com.sky.entity.Employee">
+        update employee
+        <set>
+            <if test="username != null and username != ''" >username = #{username},</if>
+            <if test="name != null and name != ''" >name = #{name},</if>
+            <if test="password != null and password != ''" >password = #{password},</if>
+            <if test="phone != null and phone != ''" >phone = #{phone},</if>
+            <if test="sex != null and sex != ''" >sex = #{sex},</if>
+            <if test="idNumber != null and idNumber != ''" >id_number = #{idNumber},</if>
+            <if test="status != null" >status = #{status},</if>
+            <if test="createUser != null" >create_user = #{createUser},</if>
+            <if test="updateUser != null" >update_user = #{updateUser},</if>
+        </set>
+        where id = #{id}
+    </update>
 
     <select id="pageQuery" resultType="com.sky.entity.Employee">
         select * from employee
         <where>
             <if test="name != null and name != ''">
-                name like concat('%', #{name}, '%')
+                and name like concat('%', #{name}, '%')
             </if>
         </where>
+        order by create_time desc
     </select>
-
 </mapper>

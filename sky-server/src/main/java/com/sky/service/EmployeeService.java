@@ -6,6 +6,8 @@ import com.sky.dto.EmployeePageQueryDTO;
 import com.sky.entity.Employee;
 import com.sky.result.PageResult;
 
+import java.util.List;
+
 /**
  * 员工相关业务接口。
  */
@@ -25,4 +27,12 @@ public interface EmployeeService {
     void save(EmployeeDTO employeeDTO);
 
     PageResult page(EmployeePageQueryDTO employeePageQueryDTO);
+
+    /**
+     * 批量启用或禁用员工账号。
+     *
+     * @param status 账号状态，0 表示禁用，1 表示启用
+     * @param id    要更新状态的员工 id 列表
+     */
+    void updateStatus(Integer status, Integer id);
 }

@@ -96,4 +96,11 @@ public class EmployeeController {
         PageResult pageResult = employeeService.page(employeePageQueryDTO);
         return Result.success(pageResult);
     }
+
+    @PostMapping("/status/{status}")
+    public Result<String> updateStatus(@PathVariable Integer status, Integer id) {
+        log.info("批量更新员工状态：status={}, id={}", status, id);
+        employeeService.updateStatus(status, id);
+        return Result.success();
+    }
 }

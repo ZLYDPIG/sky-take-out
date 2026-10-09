@@ -43,7 +43,7 @@ sky:
   jwt:
     # 设置jwt签名加密时使用的秘钥
     admin-secret-key: itcast
-    # 设置jwt过期时间（毫秒），7200000 = 2 小时
-    admin-ttl: 7200000
+    # 设置jwt过期时间（毫秒），720000000 = 24 小时
+    admin-ttl: 720000000
     # 设置前端传递过来的令牌名称（请求头名）
     admin-token-name: token

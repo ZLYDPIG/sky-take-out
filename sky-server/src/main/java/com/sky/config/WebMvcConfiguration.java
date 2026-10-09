@@ -97,8 +97,10 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
         log.info("开始注册自定义 JSON 消息转换器...");
         // 注册 JSON 消息转换器
         MappingJackson2HttpMessageConverter converter = new MappingJackson2HttpMessageConverter();
+
         // 需要为 JSON 消息转换器配置自定义的 JSON 映射器，用于自定义 JSON 序列化/反序列化规则
         converter.setObjectMapper(new JacksonObjectMapper());
+
         //将自定义的 JSON 消息转换器添加到列表中
         converters.add(0, converter);
     }
