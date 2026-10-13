@@ -1,0 +1,129 @@
+package com.sky.service.impl;
+
+import com.github.pagehelper.Page;
+import com.github.pagehelper.PageHelper;
+import com.sky.constant.MessageConstant;
+import com.sky.constant.StatusConstant;
+import com.sky.dto.DishDTO;
+import com.sky.dto.DishPageQueryDTO;
+import com.sky.entity.Dish;
+import com.sky.entity.DishFlavor;
+import com.sky.exception.DeletionNotAllowedException;
+import com.sky.mapper.DishFlavorMapper;
+import com.sky.mapper.DishMapper;
+import com.sky.mapper.SetmealDishMapper;
+import com.sky.result.PageResult;
+import com.sky.service.DishService;
+import com.sky.vo.DishVO;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+@Service
+public class DishServicesImpl implements DishService {
+    @Autowired
+    private DishMapper dishMapper;
+
+    @Autowired
+    private DishFlavorMapper dishFlavorMapper;
+
+    @Autowired
+    private SetmealDishMapper setmealDishMapper;
+
+    @Override
+    @Transactional
+    public Long saveWithFlavor(DishDTO dishDTO) {
+        //保存菜品
+        Dish dish = new Dish();
+        BeanUtils.copyProperties(dishDTO,dish);
+        dishMapper.insert(dish);
+
+        //保存口味
+        List<DishFlavor> flavors = dishDTO.getFlavors();
+
+        if(!CollectionUtils.isEmpty(flavors)) {
+        flavors.forEach(flavor -> {flavor.setDishId(dish.getId());});
+        dishFlavorMapper.insertBatch(flavors);
+        }
+        return dish.getId();
+    }
+
+    @Override
+    public PageResult page(DishPageQueryDTO dishPageQueryDTO) {
+        PageHelper.startPage(dishPageQueryDTO.getPage(),dishPageQueryDTO.getPageSize());
+        Page<DishVO> page = dishMapper.selectPage(dishPageQueryDTO);
+        return new PageResult(page.getTotal(),page.getResult());
+    }
+
+    @Override
+    @Transactional
+    public void deleteByIds(List<Long> ids) {
+        if (CollectionUtils.isEmpty(ids) || ids.stream().anyMatch(id -> id == null || id <= 0)) {
+            throw new DeletionNotAllowedException("菜品ID不能为空且必须为正数");
+        }
+
+        for (Long id : ids) {
+            Dish dish = dishMapper.selectById(id);
+            if (dish == null) {
+                throw new DeletionNotAllowedException("菜品不存在，ID：" + id);
+            }
+            //判断是否存在起售中的菜品
+            if (StatusConstant.ENABLE.equals(dish.getStatus())) {
+                throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
+            }
+
+            //判断是否存在套餐包含该菜品
+            Integer count = setmealDishMapper.countConnectSet(id);
+            if (count != null && count > 0) {
+                throw new DeletionNotAllowedException(MessageConstant.DISH_BE_RELATED_BY_SETMEAL);
+            }
+        }
+        //删除口味表中的数据
+        dishFlavorMapper.deleteBatch(ids);
+
+        //删除菜品表中的数据
+        dishMapper.deleteBatch(ids);
+
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void updateDish(DishDTO dishDTO){
+        //更新菜品
+        Dish dish = new Dish();
+        BeanUtils.copyProperties(dishDTO,dish);
+        dishMapper.updateById(dish);
+
+        //更新口味
+        dishFlavorMapper.deleteByDishId(Arrays.asList(dish.getId()));
+        List<DishFlavor> flavors = dishDTO.getFlavors();
+        if(!CollectionUtils.isEmpty(flavors)) {
+            flavors.forEach(flavor -> {flavor.setDishId(dish.getId());});
+            dishFlavorMapper.insertBatch(flavors);
+        }
+    }
+
+    @Override
+    public DishVO getByIdwithFlavor(Long id) {
+        //查询菜品
+        Dish dish = dishMapper.selectById(id);
+
+        //查询口味
+        List<DishFlavor> flavors = dishFlavorMapper.selectByDishId(id);
+        DishVO dishVO = new DishVO();
+        BeanUtils.copyProperties(dish, dishVO);
+        dishVO.setFlavors(flavors);
+        return dishVO;
+    }
+
+    @Override
+    public void updateStatus(Integer status, Long id) {
+        dishMapper.updateStatus(status, id);
+    }
+}
