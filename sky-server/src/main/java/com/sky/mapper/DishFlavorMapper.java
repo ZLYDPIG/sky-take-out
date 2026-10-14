@@ -17,5 +17,5 @@ public interface DishFlavorMapper {
 
     void deleteBatch(@Param("ids") List<Long> ids);
 
-    void deleteByDishId(@Param("ids") List<Long> list);
+    void deleteByDishId(Long dishId);
 }

@@ -107,7 +107,7 @@ public class DishServicesImpl implements DishService {
         dishMapper.updateById(dish);
 
         //更新口味
-        dishFlavorMapper.deleteByDishId(Collections.singletonList(dishDTO.getId()));
+        dishFlavorMapper.deleteByDishId(dishDTO.getId());
         List<DishFlavor> flavors = dishDTO.getFlavors();
         if(!CollectionUtils.isEmpty(flavors)) {
             flavors.forEach(flavor -> {flavor.setDishId(dish.getId());});
@@ -116,6 +116,7 @@ public class DishServicesImpl implements DishService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public DishVO getByIdwithFlavor(Long id) {
         //查询菜品
         Dish dish = dishMapper.selectById(id);

@@ -17,6 +17,7 @@ import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.SetmealService;
 import com.sky.vo.SetmealVO;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import org.springframework.util.CollectionUtils;
 import java.util.Collections;
 import java.util.List;
 
+@Slf4j
 @Service
 public class SetmealServiceImpl implements SetmealService {
     @Autowired
@@ -68,10 +70,6 @@ public class SetmealServiceImpl implements SetmealService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteByIds(List<Long> ids) {
-        if (CollectionUtils.isEmpty(ids)) {
-            return;
-        }
-
         for (Long id : ids) {
             Setmeal setmeal = setmealMapper.getById(id);
             if(setmeal == null){

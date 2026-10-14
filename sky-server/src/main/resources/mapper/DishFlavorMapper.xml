@@ -17,11 +17,8 @@
         </foreach>
     </delete>
 
-    <delete id="deleteByDishId" parameterType="java.util.List">
-        delete from dish_flavor where dish_id in
-        <foreach collection="ids" item="id" open="(" close=")" separator=",">
-            #{id}
-        </foreach>
+    <delete id="deleteByDishId">
+        delete from dish_flavor where dish_id = #{dishId}
     </delete>
 
 </mapper>
