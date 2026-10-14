@@ -8,10 +8,12 @@ import com.sky.dto.DishDTO;
 import com.sky.dto.DishPageQueryDTO;
 import com.sky.entity.Dish;
 import com.sky.entity.DishFlavor;
+import com.sky.entity.Setmeal;
 import com.sky.exception.DeletionNotAllowedException;
 import com.sky.mapper.DishFlavorMapper;
 import com.sky.mapper.DishMapper;
 import com.sky.mapper.SetmealDishMapper;
+import com.sky.mapper.SetmealMapper;
 import com.sky.result.PageResult;
 import com.sky.service.DishService;
 import com.sky.vo.DishVO;
@@ -36,9 +38,12 @@ public class DishServicesImpl implements DishService {
     @Autowired
     private SetmealDishMapper setmealDishMapper;
 
+    @Autowired
+    private SetmealMapper setmealMapper;
+
     @Override
     @Transactional
-    public Long saveWithFlavor(DishDTO dishDTO) {
+    public void saveWithFlavor(DishDTO dishDTO) {
         //保存菜品
         Dish dish = new Dish();
         BeanUtils.copyProperties(dishDTO,dish);
@@ -51,7 +56,6 @@ public class DishServicesImpl implements DishService {
         flavors.forEach(flavor -> {flavor.setDishId(dish.getId());});
         dishFlavorMapper.insertBatch(flavors);
         }
-        return dish.getId();
     }
 
     @Override
@@ -73,7 +77,9 @@ public class DishServicesImpl implements DishService {
             if (dish == null) {
                 throw new DeletionNotAllowedException("菜品不存在，ID：" + id);
             }
+
             //判断是否存在起售中的菜品
+
             if (StatusConstant.ENABLE.equals(dish.getStatus())) {
                 throw new DeletionNotAllowedException(MessageConstant.DISH_ON_SALE);
             }
@@ -97,11 +103,11 @@ public class DishServicesImpl implements DishService {
     public void updateDish(DishDTO dishDTO){
         //更新菜品
         Dish dish = new Dish();
-        BeanUtils.copyProperties(dishDTO,dish);
+        BeanUtils.copyProperties(dishDTO, dish);
         dishMapper.updateById(dish);
 
         //更新口味
-        dishFlavorMapper.deleteByDishId(Arrays.asList(dish.getId()));
+        dishFlavorMapper.deleteByDishId(Collections.singletonList(dishDTO.getId()));
         List<DishFlavor> flavors = dishDTO.getFlavors();
         if(!CollectionUtils.isEmpty(flavors)) {
             flavors.forEach(flavor -> {flavor.setDishId(dish.getId());});
@@ -123,7 +129,26 @@ public class DishServicesImpl implements DishService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void updateStatus(Integer status, Long id) {
-        dishMapper.updateStatus(status, id);
+        Dish dish = Dish.builder()
+                .id(id)
+                .status(status)
+                .build();
+        dishMapper.updateById(dish);
+
+        // 如果是停售操作，还需要将包含当前菜品的套餐也停售
+        if (StatusConstant.DISABLE.equals(status)) {
+            List<Long> setmealIds = setmealDishMapper.getSetmealIdsByDishId(id);
+            if (!CollectionUtils.isEmpty(setmealIds)) {
+                for (Long setmealId : setmealIds) {
+                    Setmeal setmeal = Setmeal.builder()
+                            .id(setmealId)
+                            .status(StatusConstant.DISABLE)
+                            .build();
+                    setmealMapper.update(setmeal);
+                }
+            }
+        }
     }
 }

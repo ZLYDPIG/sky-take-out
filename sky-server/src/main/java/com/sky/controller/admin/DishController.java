@@ -23,8 +23,8 @@ public class DishController {
     @PostMapping
     public Result<Long> add(@RequestBody DishDTO dishDTO){
         log.info("添加菜品：{}", dishDTO);
-        Long dishId = dishService.saveWithFlavor(dishDTO);
-        return Result.success(dishId);
+        dishService.saveWithFlavor(dishDTO);
+        return Result.success();
     }
 
     @GetMapping("/page")
