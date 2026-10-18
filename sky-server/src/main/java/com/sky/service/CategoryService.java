@@ -41,6 +41,13 @@ public interface CategoryService {
     void startOrStop(Integer status, Long id);
 
     /**
+     * 条件查询分类
+     * @param category
+     * @return
+     */
+    List<Category> list(Category category);
+
+    /**
      * 根据类型查询分类
      * @param type
      * @return
