@@ -10,6 +10,7 @@ import com.sky.mapper.UserMapper;
 import com.sky.properties.WeChatProperties;
 import com.sky.service.UserService;
 import com.sky.utils.HttpClientUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +21,7 @@ import java.util.Map;
 /**
  * C端用户业务实现类：微信登录。
  */
+@Slf4j
 @Service
 public class UserServiceImpl implements UserService {
 
@@ -105,6 +107,7 @@ public class UserServiceImpl implements UserService {
 
         // 发送 GET 请求，拿到微信返回的 JSON 字符串（请求失败时 doGet 返回空串 ""）
         String json = HttpClientUtil.doGet(WX_LOGIN, claims);
+        log.info("调用微信接口换取openid返回结果: {}", json);
 
         // 响应体为空或解析失败，直接返回 null，由调用方按"登录失败"处理
         if (StringUtils.isEmpty(json)) {
