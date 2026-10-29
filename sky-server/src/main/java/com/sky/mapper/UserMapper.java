@@ -4,6 +4,7 @@ import com.sky.entity.User;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
 @Mapper
@@ -12,11 +13,11 @@ public interface UserMapper {
     /**
      * 根据微信 openid 查询用户
      *
-     * @param openId 微信用户唯一标识
+     * @param openid 微信用户唯一标识
      * @return 用户对象，不存在时返回 null
      */
-    @Select("select * from user where openid = #{openId}")
-    User getByOpenid(String openId);
+    @Select("select * from user where openid = #{openid}")
+    User getByOpenid(@Param("openid") String openid);
 
     /**
      * 新增用户（注册）
@@ -29,4 +30,7 @@ public interface UserMapper {
     @Insert("insert into user (openid, create_time) values (#{openid}, #{createTime})")
     @Options(useGeneratedKeys = true, keyProperty = "id")
     void insert(User user);
+
+    @Select("select * from user where id = #{id}")
+    User getById(@Param("id") Long id);
 }

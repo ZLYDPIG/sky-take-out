@@ -34,6 +34,9 @@ public class UserController {
     public Result<UserLoginVO> userLogin(@RequestBody UserLoginDTO userLoginDTO) {
         log.info("微信用户登录{}", userLoginDTO.getCode());
         User user = userService.wxLogin(userLoginDTO);
+        if (user == null || user.getId() == null) {
+            return Result.error("登录失败");
+        }
 
         Map<String, Object> claims = new HashMap<>();
         claims.put(JwtClaimsConstant.USER_ID, user.getId());

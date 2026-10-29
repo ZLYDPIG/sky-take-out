@@ -30,17 +30,23 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler
     public Result exceptionHandler(BaseException ex){
-        log.error("异常信息：{}", ex.getMessage());
+        log.error("业务异常信息：{}", ex.getMessage());
         return Result.error(ex.getMessage());
     }
 
     @ExceptionHandler
     public Result exceptionHandler(SQLIntegrityConstraintViolationException ex){
-        log.error("异常信息：{}", ex.getMessage());
+        log.error("数据库约束异常：{}", ex.getMessage());
         String message = ex.getMessage();
-      if (message.contains("Duplicate entry")){
-        return Result.error(MessageConstant.DUPLICATE_ENTRY);
-      }
-      return Result.error(MessageConstant.UNKNOWN_ERROR);
+        if (message.contains("Duplicate entry")){
+            return Result.error(MessageConstant.DUPLICATE_ENTRY);
+        }
+        return Result.error(MessageConstant.UNKNOWN_ERROR);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public Result exceptionHandler(Exception ex){
+        log.error("未捕获系统异常：", ex);
+        return Result.error(ex.getMessage() != null ? ex.getMessage() : MessageConstant.UNKNOWN_ERROR);
     }
 }

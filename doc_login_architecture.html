@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>苍穹外卖服务端登录及令牌流转架构概览</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 16mm 14mm 16mm 14mm;
+            @bottom-right {
+                content: counter(page);
+                font-size: 9pt;
+                color: #64748B;
+            }
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "微软雅黑", sans-serif;
+            color: #1E293B;
+            line-height: 1.55;
+            background-color: #FFFFFF;
+            font-size: 10pt;
+        }
+
+        /* 封面 / 标题头 */
+        .header-card {
+            background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #2563EB 100%);
+            color: #FFFFFF;
+            padding: 24px 28px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.15);
+        }
+
+        .header-card .tag {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(4px);
+            padding: 3px 10px;
+            border-radius: 9999px;
+            font-size: 8.5pt;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        .header-card h1 {
+            font-size: 20pt;
+            font-weight: 800;
+            line-height: 1.25;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .header-card p {
+            font-size: 10pt;
+            color: #E2E8F0;
+            max-width: 90%;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 8.5pt;
+        }
+
+        .meta-grid div span {
+            color: #94A3B8;
+            display: block;
+        }
+
+        .meta-grid div strong {
+            color: #F8FAFC;
+        }
+
+        /* 标题层级 */
+        h2 {
+            font-size: 13pt;
+            font-weight: 700;
+            color: #0F172A;
+            margin: 20px 0 10px 0;
+            padding-bottom: 6px;
+            border-bottom: 2px solid #E2E8F0;
+            display: flex;
+            align-items: center;
+        }
+
+        h2::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: #2563EB;
+            border-radius: 2px;
+            margin-right: 8px;
+        }
+
+        h3 {
+            font-size: 11pt;
+            font-weight: 600;
+            color: #1E3A8A;
+            margin: 14px 0 8px 0;
+        }
+
+        p {
+            margin-bottom: 8px;
+            text-align: justify;
+        }
+
+        /* 容器卡片与分页防护 */
+        .card, .code-box, .diagram-container, table, .timeline {
+            page-break-inside: avoid;
+        }
+
+        .page-break {
+            page-break-before: always;
+        }
+
+        .card {
+            background: #F8FAFC;
+            border: 1px solid #E2E8F0;
+            border-radius: 8px;
+            padding: 12px 14px;
+            margin-bottom: 12px;
+        }
+
+        .alert-box {
+            background-color: #EFF6FF;
+            border-left: 4px solid #3B82F6;
+            padding: 10px 14px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 12px;
+            font-size: 9pt;
+        }
+
+        .alert-box strong {
+            color: #1D4ED8;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 7px;
+            font-size: 8pt;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+
+        .badge-blue { background: #DBEAFE; color: #1E40AF; }
+        .badge-green { background: #DCFCE7; color: #166534; }
+        .badge-amber { background: #FEF3C7; color: #92400E; }
+        .badge-purple { background: #F3E8FF; color: #6B21A8; }
+
+        /* 表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+            margin: 10px 0 14px 0;
+            border-radius: 6px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        th {
+            background: #1E293B;
+            color: #FFFFFF;
+            text-align: left;
+            padding: 8px 10px;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 7px 10px;
+            border-bottom: 1px solid #E2E8F0;
+            vertical-align: middle;
+        }
+
+        tr:nth-child(even) td {
+            background: #F8FAFC;
+        }
+
+        tr:hover td {
+            background: #F1F5F9;
+        }
+
+        /* 代码块展示 */
+        .code-box {
+            background: #0F172A;
+            color: #E2E8F0;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 8pt;
+            line-height: 1.45;
+            margin: 8px 0 12px 0;
+            overflow-x: hidden;
+        }
+
+        .code-box .code-header {
+            color: #94A3B8;
+            font-size: 7.5pt;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 4px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .code-kw { color: #F472B6; font-weight: bold; }
+        .code-fn { color: #60A5FA; }
+        .code-str { color: #A7F3D0; }
+        .code-cm { color: #64748B; font-style: italic; }
+        .code-anno { color: #FBBF24; }
+
+        /* 网格分栏 */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        /* 流程步骤图表 */
+        .step-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin: 10px 0;
+        }
+
+        .step-item {
+            display: flex;
+            align-items: flex-start;
+            background: #FFFFFF;
+            border: 1px solid #E2E8F0;
+            border-radius: 6px;
+            padding: 8px 10px;
+        }
+
+        .step-num {
+            background: #2563EB;
+            color: white;
+            font-size: 8.5pt;
+            font-weight: 700;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .step-content {
+            flex: 1;
+            font-size: 8.5pt;
+        }
+
+        .step-title {
+            font-weight: 600;
+            color: #0F172A;
+            margin-bottom: 2px;
+        }
+
+        .step-desc {
+            color: #64748B;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部封面卡片 -->
+    <div class="header-card">
+        <div class="tag">Sky Take Out • Architecture Whitepaper</div>
+        <h1>服务端登录认证与令牌流转全链路架构概览</h1>
+        <p>深入解析苍穹外卖管理端（Admin）与用户端（WeChat User）的双轨身份核验、JWT 令牌签发、拦截器鉴权闭环及 ThreadLocal 线程上下文透传机制。</p>
+        <div class="meta-grid">
+            <div>
+                <span>所属工程</span>
+                <strong>sky-take-out</strong>
+            </div>
+            <div>
+                <span>认证标准</span>
+                <strong>JWT (HS256)</strong>
+            </div>
+            <div>
+                <span>鉴权核心</span>
+                <strong>Spring Interceptor + ThreadLocal</strong>
+            </div>
+            <div>
+                <span>架构体系</span>
+                <strong>管理端/用户端 双轨架构</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第一章：核心架构模型 -->
+    <h2>一、架构核心机制与双轨认证体系</h2>
+    <p>
+        在苍穹外卖系统中，服务端采用基于 <strong>JWT（JSON Web Token）的无状态会话机制</strong>。服务端不维系集中式 Session，用户每一次身份认证成功后，由服务端使用配置密钥签发附带用户唯一主键（<code>id</code>）的加密字符串返回客户端，后续业务请求前端均通过 HTTP Header 携带令牌完成身份鉴定。
+    </p>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 14%;">业务端</th>
+                <th style="width: 18%;">接口路径</th>
+                <th style="width: 22%;">身份凭证与认证源</th>
+                <th style="width: 20%;">自动注册与初次登录</th>
+                <th style="width: 26%;">令牌载荷 (Payload) 与拦截范围</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><span class="badge badge-blue">管理端 (Admin)</span></td>
+                <td><code>/admin/employee/login</code></td>
+                <td>用户名 + MD5 加密密码<br><span style="color:#64748B;">（数据库预置员工数据）</span></td>
+                <td><strong style="color:#DC2626;">无自动注册</strong><br>所有账号由超管预先录入</td>
+                <td><code>empId -> Long</code><br>拦截 <code>/admin/**</code><br>放行 <code>/login</code></td>
+            </tr>
+            <tr>
+                <td><span class="badge badge-green">用户端 (User)</span></td>
+                <td><code>/user/user/login</code></td>
+                <td>微信临时凭证 <code>code</code><br><span style="color:#64748B;">（调用微信官方服务换 openid）</span></td>
+                <td><strong style="color:#16A34A;">静默自动注册</strong><br>首次使用自动 insert 用户</td>
+                <td><code>userId -> Long</code><br>拦截 <code>/user/**</code><br>放行 <code>/login</code>, <code>/status</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="alert-box">
+        <strong>核心原则：</strong>JWT 令牌的签发必须以<strong>“凭证核验完全成功”</strong>为绝对前置条件。任何账号不存在、密码比对失败、账号锁定、微信 code 失效，都会通过抛出异常由全局异常处理器阻断流程，绝不会下发令牌。
+    </div>
+
+    <!-- 第二章：全链路时序架构矢量图 -->
+    <h2>二、全链路交互时序图（SVG 架构全景）</h2>
+    <p>下图完整呈现了从前端提交凭证、服务端逐层校验、签发 JWT，到后续发起受保护业务请求时的拦截鉴权全流程：</p>
+
+    <div class="diagram-container" style="background:#F8FAFC; border:1px solid #CBD5E1; border-radius:8px; padding:12px; margin-bottom:14px;">
+        <svg viewBox="0 0 760 410" width="100%" height="340" xmlns="http://www.w3.org/2000/svg" style="font-family: inherit;">
+            <defs>
+                <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#3B82F6"/>
+                </marker>
+                <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#10B981"/>
+                </marker>
+                <marker id="arrow-gray" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748B"/>
+                </marker>
+            </defs>
+
+            <!-- 参与者头部 -->
+            <g fill="#0F172A" text-anchor="middle" font-weight="600" font-size="11">
+                <!-- Client -->
+                <rect x="20" y="10" width="105" height="30" rx="6" fill="#1E293B"/>
+                <text x="72" y="30" fill="#FFFFFF">客户端 / 小程序</text>
+                <line x1="72" y1="40" x2="72" y2="395" stroke="#94A3B8" stroke-dasharray="4 4" stroke-width="1.5"/>
+
+                <!-- Interceptor -->
+                <rect x="155" y="10" width="115" height="30" rx="6" fill="#2563EB"/>
+                <text x="212" y="30" fill="#FFFFFF">HandlerInterceptor</text>
+                <line x1="212" y1="40" x2="212" y2="395" stroke="#94A3B8" stroke-dasharray="4 4" stroke-width="1.5"/>
+
+                <!-- Controller -->
+                <rect x="300" y="10" width="115" height="30" rx="6" fill="#0D9488"/>
+                <text x="357" y="30" fill="#FFFFFF">Controller 控制器</text>
+                <line x1="357" y1="40" x2="357" y2="395" stroke="#94A3B8" stroke-dasharray="4 4" stroke-width="1.5"/>
+
+                <!-- Service -->
+                <rect x="445" y="10" width="110" height="30" rx="6" fill="#4F46E5"/>
+                <text x="500" y="30" fill="#FFFFFF">Service 业务层</text>
+                <line x1="500" y1="40" x2="500" y2="395" stroke="#94A3B8" stroke-dasharray="4 4" stroke-width="1.5"/>
+
+                <!-- DB / WeChat / ThreadLocal -->
+                <rect x="585" y="10" width="155" height="30" rx="6" fill="#D97706"/>
+                <text x="662" y="30" fill="#FFFFFF">DB / 微信服务 / BaseContext</text>
+                <line x1="662" y1="40" x2="662" y2="395" stroke="#94A3B8" stroke-dasharray="4 4" stroke-width="1.5"/>
+            </g>
+
+            <!-- 阶段 1: 登录与获取令牌 -->
+            <rect x="10" y="52" width="740" height="185" rx="6" fill="#EFF6FF" fill-opacity="0.6" stroke="#BFDBFE" stroke-width="1"/>
+            <text x="22" y="68" font-size="10" font-weight="700" fill="#1D4ED8">【阶段一：用户/员工登录及令牌生成】</text>
+
+            <!-- Step 1 -->
+            <line x1="72" y1="85" x2="208" y2="85" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <text x="140" y="80" font-size="8.5" fill="#1E3A8A" text-anchor="middle">1. POST /login (凭据传参)</text>
+
+            <!-- Interceptor Pass -->
+            <rect x="165" y="93" width="95" height="18" rx="3" fill="#DBEAFE"/>
+            <text x="212" y="105" font-size="7.5" fill="#1E40AF" text-anchor="middle">exclude 匹配白名单放行</text>
+            <line x1="212" y1="114" x2="352" y2="114" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+            <!-- Step 2 -->
+            <line x1="357" y1="126" x2="495" y2="126" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <text x="428" y="122" font-size="8.5" fill="#1E3A8A" text-anchor="middle">2. 调用 service.login / wxLogin</text>
+
+            <!-- Step 3 -->
+            <line x1="500" y1="140" x2="657" y2="140" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <text x="581" y="136" font-size="8" fill="#1E3A8A" text-anchor="middle">3. 密码比对 / 微信换 openid 查库</text>
+
+            <rect x="585" y="146" width="150" height="16" rx="3" fill="#FEF3C7"/>
+            <text x="660" y="157" font-size="7.5" fill="#92400E" text-anchor="middle">若新用户则自动 insert 注册</text>
+
+            <line x1="657" y1="168" x2="505" y2="168" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+            <text x="581" y="165" font-size="8" fill="#047857" text-anchor="middle">返回实体 (带主键 id)</text>
+
+            <line x1="495" y1="180" x2="362" y2="180" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+            <text x="428" y="177" font-size="8" fill="#047857" text-anchor="middle">返回校验成功的实体对象</text>
+
+            <!-- Step 4 -->
+            <rect x="305" y="188" width="105" height="18" rx="3" fill="#DCFCE7"/>
+            <text x="357" y="200" font-size="7.5" fill="#166534" text-anchor="middle">JwtUtil.createJWT(claims)</text>
+
+            <!-- Step 5 -->
+            <line x1="352" y1="218" x2="77" y2="218" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+            <text x="212" y="214" font-size="8.5" fill="#047857" text-anchor="middle">4. 返回 Result&lt;VO&gt; (内含全新 JWT Token，保存在前端)</text>
+
+
+            <!-- 阶段 2: 携带令牌请求受保护业务 -->
+            <rect x="10" y="247" width="740" height="145" rx="6" fill="#F0FDF4" fill-opacity="0.6" stroke="#BBF7D0" stroke-width="1"/>
+            <text x="22" y="263" font-size="10" font-weight="700" fill="#15803D">【阶段二：后续常规业务请求拦截与鉴权闭环】</text>
+
+            <!-- Step 6 -->
+            <line x1="72" y1="280" x2="208" y2="280" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <text x="140" y="275" font-size="8.5" fill="#1E3A8A" text-anchor="middle">5. 请求受保护接口 (Header: token=xxx)</text>
+
+            <!-- Interceptor Check -->
+            <rect x="150" y="288" width="125" height="20" rx="3" fill="#FEF3C7"/>
+            <text x="212" y="301" font-size="7.5" fill="#92400E" text-anchor="middle">JwtUtil.parseJWT(token) 验签</text>
+
+            <!-- Set to ThreadLocal -->
+            <line x1="217" y1="316" x2="657" y2="316" stroke="#D97706" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <text x="430" y="312" font-size="8" fill="#B45309" text-anchor="middle">6. BaseContext.setCurrentId(userId / empId)</text>
+
+            <!-- Pass to Controller -->
+            <line x1="217" y1="334" x2="352" y2="334" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+            <text x="284" y="330" font-size="8.5" fill="#047857" text-anchor="middle">preHandle 放行 (return true)</text>
+
+            <!-- Business Call -->
+            <line x1="357" y1="348" x2="495" y2="348" stroke="#3B82F6" stroke-width="1.5" marker-end="url(#arrow)"/>
+            <text x="428" y="344" font-size="8.5" fill="#1E3A8A" text-anchor="middle">执行 Controller -> Service 业务</text>
+
+            <line x1="505" y1="362" x2="657" y2="362" stroke="#64748B" stroke-dasharray="3 3" stroke-width="1.2" marker-end="url(#arrow-gray)"/>
+            <text x="581" y="358" font-size="7.5" fill="#475569" text-anchor="middle">BaseContext.getCurrentId() 随时读取</text>
+
+            <line x1="352" y1="378" x2="77" y2="378" stroke="#10B981" stroke-width="1.5" marker-end="url(#arrow-green)"/>
+            <text x="212" y="374" font-size="8.5" fill="#047857" text-anchor="middle">7. 业务正常处理完毕，返回响应数据给客户端</text>
+        </svg>
+    </div>
+
+    <!-- 分页标记 -->
+    <div class="page-break"></div>
+
+    <!-- 第三章：管理端（员工）登录与令牌签发源码剖析 -->
+    <h2>三、管理端（员工）登录与令牌签发流程源码剖析</h2>
+    <div class="grid-2">
+        <div>
+            <h3>1. 控制器层接收与令牌封装</h3>
+            <p style="font-size:8.5pt;">代码位于 <code>EmployeeController.java</code>。接收前端传递的账号密码，委托业务层校验通过后签发包含 <code>empId</code> 的 JWT。</p>
+            <div class="code-box">
+                <div class="code-header"><span>EmployeeController.java</span><span>REST 接口</span></div>
+<span class="code-anno">@PostMapping</span>(<span class="code-str">"/login"</span>)
+<span class="code-kw">public</span> Result&lt;EmployeeLoginVO&gt; login(<span class="code-anno">@RequestBody</span> EmployeeLoginDTO dto) {
+    <span class="code-cm">// 1. 业务层核心校验</span>
+    Employee emp = employeeService.login(dto);
+
+    <span class="code-cm">// 2. 签发 JWT 令牌</span>
+    Map&lt;String, Object&gt; claims = <span class="code-kw">new</span> HashMap&lt;&gt;();
+    claims.put(JwtClaimsConstant.EMP_ID, emp.getId());
+    String token = JwtUtil.createJWT(
+        jwtProperties.getAdminSecretKey(),
+        jwtProperties.getAdminTtl(),
+        claims
+    );
+
+    <span class="code-cm">// 3. 组装脱敏 VO (剔除密码)</span>
+    EmployeeLoginVO vo = EmployeeLoginVO.builder()
+        .id(emp.getId()).userName(emp.getUsername())
+        .name(emp.getName()).token(token).build();
+    <span class="code-kw">return</span> Result.success(vo);
+}
+            </div>
+        </div>
+
+        <div>
+            <h3>2. 业务层三级防线校验</h3>
+            <p style="font-size:8.5pt;">代码位于 <code>EmployeeServiceImpl.java</code>。通过三道关卡确保仅有合法、激活的用户能进入签发令牌逻辑。</p>
+            <div class="code-box">
+                <div class="code-header"><span>EmployeeServiceImpl.java</span><span>业务校验</span></div>
+<span class="code-kw">public</span> Employee login(EmployeeLoginDTO dto) {
+    <span class="code-cm">// 关卡 1: 用户名存在性核验</span>
+    Employee emp = employeeMapper.getByUsername(dto.getUsername());
+    <span class="code-kw">if</span> (emp == <span class="code-kw">null</span>) {
+        <span class="code-kw">throw new</span> AccountNotFoundException(...);
+    }
+
+    <span class="code-cm">// 关卡 2: 密码 MD5 加密比对</span>
+    String md5Pwd = DigestUtils.md5DigestAsHex(
+        dto.getPassword().getBytes()
+    );
+    <span class="code-kw">if</span> (!md5Pwd.equals(emp.getPassword())) {
+        <span class="code-kw">throw new</span> PasswordErrorException(...);
+    }
+
+    <span class="code-cm">// 关卡 3: 账号启用状态检测 (1-启用 0-锁定)</span>
+    <span class="code-kw">if</span> (emp.getStatus() == StatusConstant.DISABLE) {
+        <span class="code-kw">throw new</span> AccountLockedException(...);
+    }
+    <span class="code-kw">return</span> emp;
+}
+            </div>
+        </div>
+    </div>
+
+    <!-- 第四章：用户端（微信小程序）登录与自动注册 -->
+    <h2>四、用户端（微信小程序）登录与免密自动注册</h2>
+    <p>
+        用户端小程序无需用户输入账号密码，前端调用微信原生 <code>wx.login()</code> 换得授权码 <code>code</code>，服务端向微信官方服务器校验并完成用户的“识别/自动注册”一体化：
+    </p>
+
+    <div class="step-container">
+        <div class="step-item">
+            <div class="step-num">1</div>
+            <div class="step-content">
+                <div class="step-title">接收临时凭证 code 并向微信验证</div>
+                <div class="step-desc">调用 <code>https://api.weixin.qq.com/sns/jscode2session</code> 接口，传入服务端的 <code>appid</code>、<code>secret</code> 和前端的 <code>code</code>，换取当前微信用户的全局唯一标识 <code>openid</code>。</div>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-num">2</div>
+            <div class="step-content">
+                <div class="step-title">数据库 openid 查询与静默自动注册 (核心亮点)</div>
+                <div class="step-desc">
+                    通过 <code>userMapper.getByOpenid(openId)</code> 查询。如果为 <code>null</code>，立即构建 <code>User.builder().openid(openId).createTime(now).build()</code> 并执行插入。借助 MyBatis 的 <code>useGeneratedKeys="true"</code>，主键自增 ID 自动回填到 <code>user.id</code>。
+                </div>
+            </div>
+        </div>
+
+        <div class="step-item">
+            <div class="step-num">3</div>
+            <div class="step-content">
+                <div class="step-title">签发小程序专属 JWT 令牌</div>
+                <div class="step-desc">将用户自增主键注入载荷 <code>claims.put(JwtClaimsConstant.USER_ID, user.getId())</code>，通过 <code>JwtUtil.createJWT(...)</code> 使用用户端专属密钥生成 Token 返回给小程序。</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第五章：拦截器鉴权闭环与 ThreadLocal 上下文传递 -->
+    <h2>五、拦截器鉴权闭环与 ThreadLocal 机制</h2>
+    <p>
+        获取 Token 之后，客户端在后续请求头（<code>token</code>）中携带该字符串。服务端通过 Spring MVC 拦截器实现无状态拦截鉴权：
+    </p>
+
+    <div class="grid-2">
+        <div>
+            <div class="card">
+                <h3 style="margin-top:0;">拦截器执行逻辑 (JwtTokenAdminInterceptor)</h3>
+                <ol style="margin-left: 16px; font-size: 8.5pt; color: #334155; line-height: 1.6;">
+                    <li><strong>排除非 Controller 资源：</strong>若拦截到的不是 <code>HandlerMethod</code>（如静态资源），直接放行。</li>
+                    <li><strong>请求头提取 Token：</strong><code>request.getHeader("token")</code>。</li>
+                    <li><strong>JwtUtil 验签解密：</strong>调用 <code>Jwts.parser().setSigningKey(...).parseClaimsJws(token)</code>。若令牌过期、被伪造或篡改，抛出异常。</li>
+                    <li><strong>失败中断：</strong>进入 catch 块，设置 <code>response.setStatus(401)</code> 并返回 <code>false</code>。</li>
+                    <li><strong>绑定线程上下文：</strong>提取 <code>empId / userId</code>，存入 <code>BaseContext.setCurrentId(id)</code>。</li>
+                </ol>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <h3 style="margin-top:0;">BaseContext 与 ThreadLocal 深度透视</h3>
+                <p style="font-size:8.5pt;">Tomcat 在接收 HTTP 请求时，会从工作线程池分配一个专门的线程来处理当前请求，整个过程处于<strong>同一个线程生命周期</strong>中：</p>
+                <div class="code-box" style="margin-bottom:0;">
+                    <div class="code-header"><span>BaseContext.java</span><span>ThreadLocal 封装</span></div>
+<span class="code-kw">public class</span> BaseContext {
+    <span class="code-kw">public static</span> ThreadLocal&lt;Long&gt; threadLocal = <span class="code-kw">new</span> ThreadLocal&lt;&gt;();
+    <span class="code-kw">public static void</span> setCurrentId(Long id) { threadLocal.set(id); }
+    <span class="code-kw">public static</span> Long getCurrentId() { <span class="code-kw">return</span> threadLocal.get(); }
+    <span class="code-kw">public static void</span> removeCurrentId() { threadLocal.remove(); }
+}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 第六章：高频关键认知问答总结 -->
+    <h2>六、关键业务问答与知识卡片总结</h2>
+    <table>
+        <thead>
+            <tr>
+                <th style="width: 25%;">高频关键问题</th>
+                <th style="width: 75%;">精准答案与原理总结</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>1. 这个登录属于第一次登录吗？</strong></td>
+                <td>
+                    • <strong>管理端（员工）：</strong>不属于第一次登录概念。员工账号由管理员在后台提前新增录入，每次登录都在验证已有数据，验证通过后都会重新生成全新 JWT。<br>
+                    • <strong>用户端（微信）：</strong><mark>包含新用户首次登录逻辑</mark>。若数据库无此 openid，系统会自动 insert 注册并生成新用户，老用户则直接查出。但无论新老，只要校验成功都会签发全新 JWT。
+                </td>
+            </tr>
+            <tr>
+                <td><strong>2. 什么时候生成令牌？什么时候只解密校验？</strong></td>
+                <td>
+                    • <strong>生成令牌：</strong>仅在前端显式调用 <code>/login</code> 接口，且后端业务层<strong>对密码/微信凭据校验完全通过后</strong>生成一次。<br>
+                    • <strong>只解密校验：</strong>后续的所有普通业务请求（如菜品分页查询、下单、修改状态等），拦截器只调用 <code>parseJWT</code> 验签提取 ID，<strong>绝不重复生成新令牌</strong>。
+                </td>
+            </tr>
+            <tr>
+                <td><strong>3. 服务端是如何实现退出登录（Logout）的？</strong></td>
+                <td>
+                    由于 JWT 是完全无状态的，服务端内存与 DB 中不维系 Token 会话。后端的 <code>/logout</code> 只需直接返回 <code>Result.success()</code>，真正的退出由<strong>前端主动删除本地缓存中的 Token</strong> 即可达成。
+                </td>
+            </tr>
+            <tr>
+                <td><strong>4. ThreadLocal 的线程安全与复用防坑</strong></td>
+                <td>
+                    Tomcat 采用线程池复用机制，处理完请求后该线程不会销毁而是回到池中。在生产最佳实践中，应在拦截器的 <code>afterCompletion</code> 中调用 <code>BaseContext.removeCurrentId()</code>，防止脏数据串染与内存泄漏隐患。
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

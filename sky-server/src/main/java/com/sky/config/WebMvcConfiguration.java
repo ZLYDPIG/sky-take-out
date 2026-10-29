@@ -100,6 +100,8 @@ public class WebMvcConfiguration extends WebMvcConfigurationSupport {
         registry.addResourceHandler("/doc.html").addResourceLocations("classpath:/META-INF/resources/");
         // 文档页面依赖的 js/css 等静态资源
         registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
+        // 菜品及套餐静态图片资源
+        registry.addResourceHandler("/images/**").addResourceLocations("classpath:/static/images/");
     }
 
     protected void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
