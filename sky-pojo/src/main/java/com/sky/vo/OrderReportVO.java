@@ -22,7 +22,7 @@ public class OrderReportVO implements Serializable {
     //每日有效订单数，以逗号分隔，例如：20,21,10
     private String validOrderCountList;
 
-    //订单总数
+    //订单总数c
     private Integer totalOrderCount;
 
     //有效订单数
